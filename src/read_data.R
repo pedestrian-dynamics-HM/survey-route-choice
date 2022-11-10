@@ -5,15 +5,20 @@ library(ltm)
 library(reshape2)
 
 
-read.raw_data <- function(filepath, completed_only = TRUE, remove_helper_var = TRUE, subpopulation = NULL) {
-  output <- read.csv(filepath)
-  if (completed_only) {
-    output <- droplevels(output[output$submitdate != "",])
+
+read.raw_data <- function(filepath, completed_only = TRUE, remove_helper_var = TRUE, subpopulation = "") {
+
+  library(readxl)
+  output <- readxl::read_excel(filepath)
+
+  if (subpopulation != "") {
+    output <- subset(output, group == subpopulation)
+    #output <- droplevels(output[output$group == subpopulation,]) # "Student & faculty associate" OR "Fan"
   }
 
-  # see differences in populations
-  if (subpopulation){
-    output <- output[subpopulation, , drop = FALSE]
+  if (completed_only) {
+    output <- subset(output, submitdate == "1980-01-01 00:00:00")
+    #output <- droplevels(output[output$submitdate == "1980-01-01 00:00:00",]) # same submit date (anonyized data!)
   }
 
   if (remove_helper_var) {
@@ -21,6 +26,8 @@ read.raw_data <- function(filepath, completed_only = TRUE, remove_helper_var = T
     output <- output %>% dplyr::select(-ends_with("Time", ignore.case = TRUE))
     output <- output %>% dplyr::select(-ends_with("VarRandomCondition", ignore.case = TRUE))
   }
+
+  output <- data.frame(output)
 
   return(output)
 }
@@ -60,30 +67,30 @@ tidy_stages <- function(data) {
   # no        val_1 val_2 val_3
   # yes       val_4 val_5 val_6
 
-  col_names <- c("NotInformed.RouteA" = "VarConditionB0.NoInfoRouteA.",
-                 "NotInformed.RouteB" = "VarConditionB0.NoInfoRouteB.",
-                 "NotInformed.RouteC" = "VarConditionB0.NoInfoRouteC.",
-                 "Informed.RouteA" = "VarConditionInfo.InformedRouteA.",
-                 "Informed.RouteB" = "VarConditionInfo.InformedRouteB.",
-                 "Informed.RouteC" = "VarConditionInfo.InformedRouteC."
+  col_names <- c("NotInformed_RouteA" = "VarConditionB0.NoInfoRouteA.",
+                 "NotInformed_RouteB" = "VarConditionB0.NoInfoRouteB.",
+                 "NotInformed_RouteC" = "VarConditionB0.NoInfoRouteC.",
+                 "Informed_RouteA" = "VarConditionInfo.InformedRouteA.",
+                 "Informed_RouteB" = "VarConditionInfo.InformedRouteB.",
+                 "Informed_RouteC" = "VarConditionInfo.InformedRouteC."
   )
 
   for (name in names(col_names)) {
     names(data)[names(data) == col_names[[name]]] <- name
   }
 
-  order <- c('NotInformed', 'Informed')
+
   data <- reshape(data,
                   direction = 'long',
                   varying = names(col_names),
                   timevar = 'Informed',
-                  times = order,
+                  times = c('NotInformed', 'Informed'),
                   v.names = c('RouteA', 'RouteB', 'RouteC'),
   )
 
   # remove id column
   data <- subset(data, select = -c(id))
-  data$Informed <- factor(data$Informed, levels=order)
+  data$Informed <- factor(data$Informed, levels=c('NotInformed', 'Informed'))
 
   # reorder cols
   data <- data %>%

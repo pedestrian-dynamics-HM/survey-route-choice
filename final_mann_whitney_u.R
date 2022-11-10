@@ -15,15 +15,15 @@ library(DescTools)
 library(dplyr)
 library(writexl)
 library(xtable)
+library(readxl)
 
 set.seed(1234)
 
 alpha <- 0.05
-source("survey_results/src/read_data.R")
-source("survey_results/src/constants.R")
-source("survey_results/src/derived_quantities.R")
-source("survey_results/src/statTests.R")
-source("survey_results/final_table_export_1.R")
+source("src/read_data.R")
+source("src/constants.R")
+source("src/derived_quantities.R")
+source("src/statTests.R")
 
 mannWhitneyUTest <- function(variables, cond1, cond2, route) {
 
@@ -108,13 +108,17 @@ get_pvalues_for_subpopulation <- function(variables, groupname) {
 # extract variables from data
 
 # students
-variablesstudents <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = (1:500))
+
+survey_output_file <- "data/Table-S6-Survey-Raw-data.xlsx"
+
+
+variablesstudents <- get_survey_results(survey_output_file, transform_likert = TRUE, subpopulation = "Student & faculty associate" )
 variablesstudents <- get_4x2_informed(variablesstudents)
 res1 <- get_pvalues_for_subpopulation(variablesstudents, "Students")
 
 
 # football fans
-variablesfans <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = -(1:500))
+variablesfans <- get_survey_results(survey_output_file, transform_likert = TRUE, subpopulation = "Fan" )
 variablesfans <- get_4x2_informed(variablesfans)
 res2 <- get_pvalues_for_subpopulation(variablesfans, "Fans")
 
@@ -137,7 +141,7 @@ results$Route <- plyr::mapvalues(results$Route, from = c("RouteA", "RouteB", "Ro
 
 
 
-filename <- "survey_results/final_table/pvals.tex"
+filename <- "output/pvals.tex"
 print(xtable(results, type = "latex", digits = 2), floating = FALSE, file = filename, include.rownames = FALSE)
 
 
@@ -173,7 +177,7 @@ results_difference <- results_difference[order(results_difference$Group),]
 
 
 
-filename <- "survey_results/final_table/pvalsAndMeansSignificant.tex"
+filename <- "output/pvalsAndMeansSignificant.tex"
 print(xtable(results_difference, type = "latex", digits = 4), floating = FALSE, file = filename, include.rownames = FALSE)
 print("finished")
 
