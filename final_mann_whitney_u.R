@@ -1,7 +1,3 @@
-# Title     : Kruskal-Wallis
-# Objective : Likelihoods - comparison
-# Created by: Christina Mayr
-# Created on: 20.01.22
 library(ggplot2)
 library(Hmisc)
 library(hrbrthemes)
@@ -20,6 +16,7 @@ library(readxl)
 set.seed(1234)
 alpha <- 0.05
 PVALPRECISION <- 3
+MEANPREC <- 2
 
 source("src/read_data.R")
 source("src/constants.R")
@@ -38,9 +35,12 @@ mannWhitneyUTest <- function(variables, cond1, cond2, route) {
   # location shift of mu and the alternative is that they differ by some other location shift
   # (and the one-sided alternative "greater" is that x is shifted to the right of y).
   # https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test
-  m1 <- wilcox.test(eval(as.symbol(route)) ~ condition, data = variables_, na.rm = TRUE, paired = FALSE, exact = FALSE, conf.int = TRUE)
+  mann_whit_results <- wilcox.test(eval(as.symbol(route)) ~ condition, data = variables_, na.rm = TRUE, paired = FALSE, exact = FALSE, conf.int = TRUE)
 
-  return(m1)
+  mann_whit_results$mean1 <- round(mean(output1[, c(route)]), MEANPREC)
+  mann_whit_results$mean2 <- round(mean(output2[, c(route)]), MEANPREC)
+
+  return(mann_whit_results)
 }
 
 
@@ -60,7 +60,9 @@ is_different_mann_whitney_u <- function(variables, conditionPairs, route, differ
                       Condition2 = c(condition2),
                       pValue = c(round(val, PVALPRECISION)),
                       W = round(W, 1),
-                      isDifferent = c(val <= alpha)
+                      isDifferent = c(val <= alpha),
+                      meanValCondition1 = m1$mean1,
+                      meanValCondition2 = m1$mean2
     )
     df <- rbind(df, df_)
   }
@@ -118,6 +120,15 @@ extract_designs_with_sig_difference <- function(all_designs) {
   return(data)
 }
 
+format_table <- function(table) {
+
+  table$Condition1 <- paste(table$Condition1, " (mean = ", table$meanValCondition1, ")", sep = "")
+  table$Condition2 <- paste(table$Condition2, " (mean = ", table$meanValCondition2, ")", sep = "")
+  table <- table %>% dplyr::select(-c("isDifferent", "meanValCondition1", "meanValCondition2" ))
+
+  return(table)
+}
+
 
 # read data
 survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
@@ -135,7 +146,12 @@ supplements_table_S5_fans <- get_effect_component_using_Mann_whitney_U(route_att
 table_3_students <- extract_designs_with_sig_difference(supplements_table_S4_students)
 table_4_5_fans <- extract_designs_with_sig_difference(supplements_table_S5_fans)
 
+
 # write results
+
+supplements_table_S4_students <- format_table(supplements_table_S4_students)
+supplements_table_S5_fans <- format_table(supplements_table_S5_fans)
+
 print(xtable(supplements_table_S4_students,
              type = "latex",
              digits = PVALPRECISION), floating = FALSE,
@@ -161,52 +177,7 @@ print(xtable(table_4_5_fans,
       include.rownames = FALSE)
 
 
-
-# print statistical differences only
-
-taa <- write_mean_and_kruskal_wallis(informed = TRUE)
-results_2 <- results
-results_2$mean1 <- -1
-results_2$mean2 <- -1
-for (i in 1:nrow(results_2)) {
-  c1 <- lapply(results_2[i,]$Condition1[[1]][1], as.character)[1]
-  c2 <- lapply(results_2[i,]$Condition2[[1]][1], as.character)[1]
-  Group <- lapply(results_2[i,]$Group[[1]][1], as.character)[1]
-  route <- lapply(results_2[i,]$Route[[1]][1], as.character)[1]
-
-  aaa <- aa[aa$Group == Group &
-              aa$Route == route &
-              aa$Condition == c1,]
-  bbb <- aa[aa$Group == Group &
-              aa$Route == route &
-              aa$Condition == c2,]
-
-  results_2[results_2$Group == Group &
-              results_2$Route == route &
-              results_2$Condition1 == c1, c("mean1")] <- aaa$mean
-  results_2[results_2$Group == Group &
-              results_2$Route == route &
-              results_2$Condition2 == c2, c("mean2")] <- bbb$mean
-}
-
-results_2$mean2_mean1 <- results_2$mean2 - results_2$mean1
-results_2$AddedComponent <- results_2$Difference
-results_2$Condition <- results_2$Condition1
-
-results_difference <- results_2[results_2$isDifferent == TRUE,]
-results_difference <- results_difference[order(results_difference$mean2_mean1),]
-extract <- c("Group", "Route", "Condition", "AddedComponent", "mean1", "mean2", "pValue", "W")
-results_difference <- results_difference[, extract]
-results_difference <- results_difference[order(results_difference$AddedComponent),]
-results_difference <- results_difference[order(results_difference$Group),]
-
-
-filename <- "output/pvalsAndMeansSignificant.tex"
-print(xtable(results_difference, type = "latex", digits = 4), floating = FALSE, file = filename, include.rownames = FALSE)
-print("finished")
-
-
-
+print("Finished data export.")
 
 
 
