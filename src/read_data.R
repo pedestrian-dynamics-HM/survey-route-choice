@@ -5,31 +5,49 @@ library(ltm)
 library(reshape2)
 
 
-
-read.raw_data <- function(filepath, completed_only = TRUE, remove_helper_var = TRUE, subpopulation = "") {
-
+read.raw_data <- function(filepath, completed_only = TRUE) {
+  # read excel file
   library(readxl)
   output <- readxl::read_excel(filepath)
 
-  if (subpopulation != "") {
-    output <- subset(output, group == subpopulation)
-    #output <- droplevels(output[output$group == subpopulation,]) # "Student & faculty associate" OR "Fan"
-  }
-
+  # remove incomplete survey results
   if (completed_only) {
-    output <- subset(output, submitdate == "1980-01-01 00:00:00")
-    #output <- droplevels(output[output$submitdate == "1980-01-01 00:00:00",]) # same submit date (anonyized data!)
+    output <- subset(output, submitdate == "1980-01-01 00:00:00") # finished samples have this timestamp
   }
 
-  if (remove_helper_var) {
-    output <- output %>% dplyr::select("condition" | starts_with("Var", ignore.case = TRUE))
-    output <- output %>% dplyr::select(-ends_with("Time", ignore.case = TRUE))
-    output <- output %>% dplyr::select(-ends_with("VarRandomCondition", ignore.case = TRUE))
-  }
+  # simplyfing the variable names
+  output <- output %>% dplyr::select("condition" | starts_with("Var", ignore.case = TRUE))
+  output <- output %>% dplyr::select(-ends_with("Time", ignore.case = TRUE))
+  output <- output %>% dplyr::select(-ends_with("VarRandomCondition", ignore.case = TRUE))
+
+  #A0 we remove the message design A0 since it does not include a route recommendation
+  output <- droplevels(output[output$condition != "A0",])
 
   output <- data.frame(output)
 
   return(output)
+}
+
+rename.variables <- function(data_frame) {
+
+  condition_short <- c("A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4")
+  condition_long <- c("Congestion info + arrow",
+                      "Congestion info + arrow + top down view",
+                      "Congestion info + arrow + team spirit",
+                      "Congestion info + arrow + top down view + team spirit",
+                      "Arrow",
+                      "Arrow + top down view",
+                      "Arrow + team spirit",
+                      "Arrow + top down view + team spirit")
+
+  data_frame$condition <- plyr::mapvalues(data_frame$condition, from = condition_short, to = condition_long)
+
+  names(data_frame)[names(data_frame) == "RouteA"] <- "Long"
+  names(data_frame)[names(data_frame) == "RouteB"] <- "Medium"
+  names(data_frame)[names(data_frame) == "RouteC"] <- "Short" # unfortunately letter order and length are opposite
+
+  return(data_frame)
+
 }
 
 transform.likert_scales <- function(data_frame) {
@@ -47,13 +65,13 @@ transform.likert_scales <- function(data_frame) {
                     "Agree" = 4,
                     "Strongly agree" = 5
   )
-  order <- c( "1", "2", "3", "4", "5")
+  order <- c("1", "2", "3", "4", "5")
 
   for (ii in get_likert_scaled_variable_names()) {
     data_frame[[ii]] <- revalue(data_frame[[ii]],
                                 likert_scale,
                                 warn_missing = FALSE)
-    data_frame[[ii]] <- factor( data_frame[[ii]] ,levels=order)
+    data_frame[[ii]] <- factor(data_frame[[ii]], levels = order)
   }
 
   return(data_frame)
@@ -90,7 +108,11 @@ tidy_stages <- function(data) {
 
   # remove id column
   data <- subset(data, select = -c(id))
-  data$Informed <- factor(data$Informed, levels=c('NotInformed', 'Informed'))
+
+  # rename and factor state of information
+  infostate <- c('Prior to information', 'Information provided')
+  data$Informed <- plyr::mapvalues(data$Informed, from = c('NotInformed', 'Informed'), to = infostate )
+  data$Informed <- factor(data$Informed, levels = infostate)
 
   # reorder cols
   data <- data %>%
@@ -113,35 +135,23 @@ get_within_factors <- function(variables) {
 
 get_survey_results <- function(filepath,
                                completed_only = TRUE,
-                               remove_helper_var = TRUE,
-                               transform_likert = TRUE,
-                               subpopulation = NULL,
-                               decompose_condition = TRUE,
-                               add_fav_routes = TRUE) {
+                               transform_likert = TRUE) {
   data <- read.raw_data(filepath = filepath,
-                        completed_only = completed_only,
-                        remove_helper_var = remove_helper_var,
-                        subpopulation = subpopulation)
+                        completed_only = completed_only)
+
   data <- tidy_stages(data)
-
-  if (decompose_condition){
-    data <- add_decomposed_conditions(data)
-  }
-
-  if (add_fav_routes){
-    data <- cbind(data,derive_favorite_route_from_likelihoods(data))
-  }
 
   if (transform_likert) {
     data <- transform.likert_scales(data)
     data <- get_likert_scaled_vars_as_numeric(data)
   }
 
+  data <- rename.variables(data)
+
   return(data)
 }
 
-
-get_likert_scaled_vars_as_numeric <- function (data_frame){
+get_likert_scaled_vars_as_numeric <- function(data_frame) {
 
   for (ii in get_likert_scaled_variable_names()) {
     data_frame[[ii]] <- as.numeric(data_frame[[ii]])
@@ -149,68 +159,5 @@ get_likert_scaled_vars_as_numeric <- function (data_frame){
   return(data_frame)
 }
 
-get_categorial_vars <- function (variables, remove_comment_vars = TRUE){
-  data_frame <- variables[, unlist(lapply(variables, function(x) is.numeric(x) == FALSE))]
 
-  if (remove_comment_vars){
-    data_frame <- data_frame %>% dplyr::select(-ends_with("comment.", ignore.case = TRUE))
-  }
-
-  return(data_frame)
-}
-
-add_decomposed_conditions <- function(data_frame){
-
-  data_frame <- data_frame %>% separate(condition, c("dummy", "AB", "levelN"), "", remove = FALSE)
-
-  data_frame$DensityMap <- "ShowDensity"
-  data_frame[data_frame$AB == "B", "DensityMap"] <- "NoDensity"
-
-  data_frame$Motivation <- "NotMotivated"
-  data_frame[data_frame$levelN == 3 | data_frame$levelN == 4, "Motivation"] <- "Motivated"
-
-  data_frame$TopDownRoute <- "RouteNotDisplayed"
-  data_frame[data_frame$levelN == 2 | data_frame$levelN == 4, "TopDownRoute"] <- "RouteDisplayed"
-
-  data_frame$Recommendation <- "RecommendationProvided"
-  data_frame[data_frame$levelN == 0, "Recommendation"] <- "RecommendationProvided"
-
-  data_frame <- subset(data_frame, select = -c(dummy, AB, levelN))
-
-  return(data_frame)
-}
-
-filter_informed_only <- function(data_frame){
-  data_frame <- droplevels(data_frame[data_frame$Informed == "Informed",])
-  data_frame <- subset(data_frame, select = -c(Informed))
-  return(data_frame)
-}
-
-filter_uninformed_only <- function(data_frame){
-  data_frame <- droplevels(data_frame[data_frame$Informed == "NotInformed",])
-  data_frame <- subset(data_frame, select = -c(Informed))
-  return(data_frame)
-}
-
-get_4x2_informed <- function(data_frame){
-  data_frame <- droplevels(data_frame[data_frame$condition != "A0",])
-  return(filter_informed_only(data_frame))
-}
-
-
-get_4x2_uninformed <- function(data_frame){
-  data_frame <- droplevels(data_frame[data_frame$condition != "A0",])
-  return(filter_uninformed_only(data_frame))
-}
-
-get_4x2 <- function(data_frame, informed=TRUE){
-
-  if (informed == TRUE){
-    return(get_4x2_informed(data_frame))
-  } else{
-    return(get_4x2_uninformed(data_frame))
-  }
-
-
-}
 

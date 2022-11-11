@@ -45,8 +45,6 @@ mannWhitneyUTest <- function(variables, cond1, cond2, route) {
 
 is_different_mann_whitney_u <- function(variables, conditionPairs, route, difference) {
 
-  conditionOverview <- get_conditions_overview()
-
   df <- data.frame(Route = c(), Difference = c(), Condition1 = c(), Condition2 = c(), pValue = c(), isDifferent = c())
 
   for (condition1 in colnames(conditionPairs)) {
@@ -70,30 +68,31 @@ is_different_mann_whitney_u <- function(variables, conditionPairs, route, differ
 
 get_pvalues_for_subpopulation <- function(variables, groupname) {
 
+
   effect.motivation <- data.frame(
-    "A1" = "A3", # A1: no motivation, A3: with motivation
-    "A2" = "A4",
-    "B1" = "B3",
-    "B2" = "B4"
+    "Congestion info + arrow" = "Congestion info + arrow + team spirit",
+    "Congestion info + arrow + top down view" = "Congestion info + arrow + top down view + team spirit",
+    "Arrow" = "Arrow + team spirit",
+    "Arrow + top down view" = "Arrow + top down view + team spirit"
   )
 
   effect.density <- data.frame(
-    "B1" = "A1", # B1: no density, A1: with density
-    "B2" = "A2",
-    "B3" = "A3",
-    "B4" = "A4"
+    "Arrow" = "Congestion info + arrow",
+    "Arrow + top down view" = "Congestion info + arrow + top down view",
+    "Arrow + team spirit" = "Congestion info + arrow + team spirit",
+    "Arrow + top down view + team spirit" = "Congestion info + arrow + top down view + team spirit"
   )
 
   effect.route <- data.frame(
-    "A1" = "A2", # A1: no route, A2: with route
-    "A3" = "A4",
-    "B1" = "B2",
-    "B3" = "B4"
+    "Congestion info + arrow" = "Congestion info + arrow + top down view",
+    "Congestion info + arrow + team spirit" = "Congestion info + arrow + top down view + team spirit",
+    "Arrow" = "Arrow + top down view",
+    "Arrow + team spirit" = "Arrow + top down view + team spirit"
   )
 
   df <- data.frame(route = c(), difference = c(), cond1 = c(), cond2 = c(), pval = c(), isDifferent = c())
 
-  for (route_ in c("RouteA", "RouteB", "RouteC")) {
+  for (route_ in c("Long", "Medium", "Short")) {
     df <- rbind(df, is_different_mann_whitney_u(variables, effect.density, route_, "Congestion info"))
     df <- rbind(df, is_different_mann_whitney_u(variables, effect.motivation, route_, "Team spirit"))
     df <- rbind(df, is_different_mann_whitney_u(variables, effect.route, route_, "Top down view"))
@@ -109,40 +108,32 @@ get_pvalues_for_subpopulation <- function(variables, groupname) {
 
 # students
 
-survey_output_file <- "data/Table-S6-Survey-Raw-data.xlsx"
+survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
 
+survey_results <- subset(survey_results, Informed == "Information provided")
 
-variablesstudents <- get_survey_results(survey_output_file, transform_likert = TRUE, subpopulation = "Student & faculty associate" )
-variablesstudents <- get_4x2_informed(variablesstudents)
+variablesstudents <- subset(all, group == "Student & faculty associate")
 res1 <- get_pvalues_for_subpopulation(variablesstudents, "Students")
 
-
 # football fans
-variablesfans <- get_survey_results(survey_output_file, transform_likert = TRUE, subpopulation = "Fan" )
-variablesfans <- get_4x2_informed(variablesfans)
+variablesfans <- subset(all, group == "Fan")
 res2 <- get_pvalues_for_subpopulation(variablesfans, "Fans")
 
-results <- rbind(res1, res2)
 
-condition_short <- c("A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4")
-condition_long <- c("Congestion info + arrow",
-                    "Congestion info + arrow + top down view",
-                    "Congestion info + arrow + team spirit",
-                    "Congestion info + arrow + top down view + team spirit",
-                    "Arrow",
-                    "Arrow + top down view",
-                    "Arrow + team spirit ",
-                    "Arrow + top down view + team spirit")
-
-
-results$Condition1 <- plyr::mapvalues(results$Condition1, from = condition_short, to = condition_long)
-results$Condition2 <- plyr::mapvalues(results$Condition2, from = condition_short, to = condition_long)
-results$Route <- plyr::mapvalues(results$Route, from = c("RouteA", "RouteB", "RouteC"), to = c("Long", "Medium", "Short"))
 
 
 
 filename <- "output/pvals.tex"
+
+print(xtable(res1, type = "latex", digits = 2), floating = FALSE, file = filename, include.rownames = FALSE)
+
+
 print(xtable(results, type = "latex", digits = 2), floating = FALSE, file = filename, include.rownames = FALSE)
+
+
+
+
+
 
 
 # print statistical differences only
