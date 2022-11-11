@@ -1,7 +1,4 @@
-# Title     : Kruskal-Wallis
-# Objective : Likelihoods - comparison
-# Created by: Christina Mayr
-# Created on: 20.01.22
+
 library(ggplot2)
 library(Hmisc)
 library(hrbrthemes)
@@ -20,15 +17,13 @@ library(xtable)
 set.seed(1234)
 
 alpha <- 0.05
-source("survey_results/src/read_data.R")
-source("survey_results/src/constants.R")
-source("survey_results/src/derived_quantities.R")
-
+source("src/read_data.R")
+source("src/constants.R")
+source("src/derived_quantities.R")
 
 
 # extract variables from data
 
-conds <- c("A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4")
 
 compute_route_utilizations <- function(output, population, condition){
 
@@ -62,45 +57,14 @@ compute_route_utilization_conditionwise <- function(variables, population= "Fans
   return(df)
 }
 
-# students
-variablesstudents <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = (1:500))
-variablesstudents <- get_4x2_informed(variablesstudents)
-res1 <- compute_route_utilization_conditionwise(variablesstudents, "Students")
+
+# read data
+survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
+route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 
 
-# football fans
-variablesfans <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = -(1:500))
-variablesfans <- get_4x2_informed(variablesfans)
-res2 <- compute_route_utilization_conditionwise(variablesfans, "Fans")
 
-# students
-variablesstudents <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = (1:500))
-variablesstudents <- get_4x2_uninformed(variablesstudents)
-res1_uninformed <- compute_route_utilizations(variablesstudents, "Students", "Uninformed")
-
-
-# football fans
-variablesfans <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = -(1:500))
-variablesfans <- get_4x2_uninformed(variablesfans)
-res2_uninformed <- compute_route_utilizations(variablesfans, "Fans", "Uninformed")
-
-
-# write results
-results <- rbind(res1_uninformed, res1, res2_uninformed, res2)
-
-condition_short <- c("Uninformed", "A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4")
-condition_long <- c("No congestion info",
-                    "Congestion info + arrow",
-                    "Congestion info + arrow + top down view",
-                    "Congestion info + arrow + team spirit",
-                    "Congestion info + arrow + top down view + team spirit",
-                    "Arrow",
-                    "Arrow + top down view",
-                    "Arrow + team spirit ",
-                    "Arrow + top down view + team spirit")
-
-results$Condition <- plyr::mapvalues(results$Condition, from = condition_short, to = condition_long)
-filename <- "survey_results/final_table/RouteUtilizations.tex"
+filename <- "output/table_6_RouteChoiceProportions.tex"
 print(xtable(results, type = "latex", digits = 0), floating = FALSE, file = filename, include.rownames = FALSE)
 
 

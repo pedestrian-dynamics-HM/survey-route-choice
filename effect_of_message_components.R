@@ -134,6 +134,8 @@ format_table <- function(table) {
 survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 route_attractiveness_informed <- subset(route_attractiveness, Informed == "InformationProvided")
+route_attractiveness_priorToInfo <- subset(route_attractiveness, Informed == "PriorToInformation")
+
 
 # 1 normality check
 normality.long <- route_attractiveness_informed %>% group_by(group, condition) %>% shapiro_test(RouteAttractivenessLong)
@@ -143,7 +145,27 @@ normality <- rbind(normality.long, normality.medium, normality.short)
 ## comment: the distributions are not normally distributed -> we need to use non-parametric tests in step 2 (Mann Whitney U)
 
 
-# 2 Mann Whintey U tests
+# 2 Statistics +  Kruskal Wallis test
+## before we compare two message desings we check whether there is a difference or not
+
+kruskal.long <- route_attractiveness %>% group_by(Informed, group) %>% kruskal_test(RouteAttractivenessLong ~ condition)
+kruskal.medium <- route_attractiveness %>% group_by(Informed, group) %>% kruskal_test(RouteAttractivenessMedium ~ condition)
+kruskal.short <- route_attractiveness %>% group_by(Informed, group) %>% kruskal_test(RouteAttractivenessShort ~ condition)
+
+kruskal <- rbind(kruskal.long, kruskal.medium, kruskal.short)
+supplements_table_S3_kruskal <- kruskal[with(kruskal, order(Informed, group)), ]
+
+
+stat.long <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessLong, type = "full")
+stat.medium <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessMedium, type = "full")
+stat.short <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessShort, type = "full")
+
+stat <- rbind(stat.long, stat.medium, stat.short)
+supplements_table_S1_S2_stats <- stat[with(stat, order(Informed,  group, variable)), ]
+supplements_table_S1_S2_stats <- supplements_table_S1_S2_stats[, c("Informed", "variable", "group", "condition",  "mean", "median", "sd", "n")]
+
+# 3 Mann Whintey U tests
+## We only need to consider the informed case (without info, the message design does not exit, thus, has no effect)
 ## We compare whether adding one of the three message components (congestion info, top down view, team spirit)
 ## makes a difference.
 
@@ -159,6 +181,18 @@ table_4_5_fans <- extract_designs_with_sig_difference(supplements_table_S5_fans)
 
 supplements_table_S4_students <- format_table(supplements_table_S4_students)
 supplements_table_S5_fans <- format_table(supplements_table_S5_fans)
+
+print(xtable(supplements_table_S1_S2_stats,
+             type = "latex",
+             digits = PVALPRECISION), floating = FALSE,
+      file = "output/supplements_table_S1_S2_stats.tex",
+      include.rownames = FALSE)
+
+print(xtable(supplements_table_S3_kruskal,
+             type = "latex",
+             digits = PVALPRECISION), floating = FALSE,
+      file = "output/supplements_table_S3_kruskal.tex",
+      include.rownames = FALSE)
 
 print(xtable(supplements_table_S4_students,
              type = "latex",
