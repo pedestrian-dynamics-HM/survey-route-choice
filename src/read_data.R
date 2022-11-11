@@ -15,12 +15,12 @@ read.raw_data <- function(filepath, completed_only = TRUE) {
     output <- subset(output, submitdate == "1980-01-01 00:00:00") # finished samples have this timestamp
   }
 
-  # simplyfing the variable names
-  output <- output %>% dplyr::select("condition" | starts_with("Var", ignore.case = TRUE))
+  # extract variables of interest
+  output <- output %>% dplyr::select("group" | "condition" | starts_with("Var", ignore.case = TRUE))
   output <- output %>% dplyr::select(-ends_with("Time", ignore.case = TRUE))
   output <- output %>% dplyr::select(-ends_with("VarRandomCondition", ignore.case = TRUE))
 
-  #A0 we remove the message design A0 since it does not include a route recommendation
+  # A0 we remove the message design A0 since it does not include a route recommendation
   output <- droplevels(output[output$condition != "A0",])
 
   output <- data.frame(output)
@@ -29,6 +29,19 @@ read.raw_data <- function(filepath, completed_only = TRUE) {
 }
 
 rename.variables <- function(data_frame) {
+
+  col_names <- c("PriorToInformation_RouteAttractivenessLong" = "VarConditionB0.NoInfoRouteA.",
+                 "PriorToInformation_RouteAttractivenessMedium" = "VarConditionB0.NoInfoRouteB.",
+                 "PriorToInformation_RouteAttractivenessShort" = "VarConditionB0.NoInfoRouteC.",
+                 "InformationProvided_RouteAttractivenessLong" = "VarConditionInfo.InformedRouteA.",
+                 "InformationProvided_RouteAttractivenessMedium" = "VarConditionInfo.InformedRouteB.",
+                 "InformationProvided_RouteAttractivenessShort" = "VarConditionInfo.InformedRouteC."
+  )
+
+  for (name in names(col_names)) {
+    names(data_frame)[names(data_frame) == col_names[[name]]] <- name
+  }
+
 
   condition_short <- c("A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4")
   condition_long <- c("Congestion info + arrow",
@@ -41,10 +54,6 @@ rename.variables <- function(data_frame) {
                       "Arrow + top down view + team spirit")
 
   data_frame$condition <- plyr::mapvalues(data_frame$condition, from = condition_short, to = condition_long)
-
-  names(data_frame)[names(data_frame) == "RouteA"] <- "Long"
-  names(data_frame)[names(data_frame) == "RouteB"] <- "Medium"
-  names(data_frame)[names(data_frame) == "RouteC"] <- "Short" # unfortunately letter order and length are opposite
 
   return(data_frame)
 
@@ -77,46 +86,28 @@ transform.likert_scales <- function(data_frame) {
   return(data_frame)
 }
 
-tidy_stages <- function(data) {
-  # route_A route_B route_C route_A_informed route_B_informed route_C_informed
-  # val_1   val_2   val_3   val_4   val_5   val_6
-  #
-  # informed   A    B     C
-  # no        val_1 val_2 val_3
-  # yes       val_4 val_5 val_6
+get_route_attractiveness_long_format <- function(data) {
 
-  col_names <- c("NotInformed_RouteA" = "VarConditionB0.NoInfoRouteA.",
-                 "NotInformed_RouteB" = "VarConditionB0.NoInfoRouteB.",
-                 "NotInformed_RouteC" = "VarConditionB0.NoInfoRouteC.",
-                 "Informed_RouteA" = "VarConditionInfo.InformedRouteA.",
-                 "Informed_RouteB" = "VarConditionInfo.InformedRouteB.",
-                 "Informed_RouteC" = "VarConditionInfo.InformedRouteC."
+
+  col_names <- c("PriorToInformation_RouteAttractivenessLong",
+                 "PriorToInformation_RouteAttractivenessMedium",
+                 "PriorToInformation_RouteAttractivenessShort",
+                 "InformationProvided_RouteAttractivenessLong",
+                 "InformationProvided_RouteAttractivenessMedium",
+                 "InformationProvided_RouteAttractivenessShort"
   )
 
-  for (name in names(col_names)) {
-    names(data)[names(data) == col_names[[name]]] <- name
-  }
-
+  data <- data %>% dplyr::select( c("group", "condition", col_names) )
 
   data <- reshape(data,
                   direction = 'long',
-                  varying = names(col_names),
+                  varying = col_names,
                   timevar = 'Informed',
-                  times = c('NotInformed', 'Informed'),
-                  v.names = c('RouteA', 'RouteB', 'RouteC'),
+                  times = c('PriorToInformation', 'InformationProvided'),
+                  v.names = c("RouteAttractivenessLong", "RouteAttractivenessMedium", "RouteAttractivenessShort"),
   )
 
-  # remove id column
-  data <- subset(data, select = -c(id))
-
-  # rename and factor state of information
-  infostate <- c('Prior to information', 'Information provided')
-  data$Informed <- plyr::mapvalues(data$Informed, from = c('NotInformed', 'Informed'), to = infostate )
-  data$Informed <- factor(data$Informed, levels = infostate)
-
-  # reorder cols
-  data <- data %>%
-    dplyr::select("Informed", everything())
+  data <- data[ , c("Informed", names(data)[names(data) != "Informed"])]
 
   return(data)
 }
@@ -139,10 +130,8 @@ get_survey_results <- function(filepath,
   data <- read.raw_data(filepath = filepath,
                         completed_only = completed_only)
 
-  data <- tidy_stages(data)
 
   if (transform_likert) {
-    data <- transform.likert_scales(data)
     data <- get_likert_scaled_vars_as_numeric(data)
   }
 
@@ -152,6 +141,8 @@ get_survey_results <- function(filepath,
 }
 
 get_likert_scaled_vars_as_numeric <- function(data_frame) {
+
+  data_frame <- transform.likert_scales(data_frame)
 
   for (ii in get_likert_scaled_variable_names()) {
     data_frame[[ii]] <- as.numeric(data_frame[[ii]])
