@@ -133,21 +133,29 @@ format_table <- function(table) {
 # read data
 survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
-
-# compare the effects of components only makes sense, when information is provided:
 route_attractiveness_informed <- subset(route_attractiveness, Informed == "InformationProvided")
 
-## for students
+# 1 normality check
+normality.long <- route_attractiveness_informed %>% group_by(group, condition) %>% shapiro_test(RouteAttractivenessLong)
+normality.medium <- route_attractiveness_informed %>% group_by(group, condition) %>% shapiro_test(RouteAttractivenessMedium)
+normality.short <- route_attractiveness_informed %>% group_by(group, condition) %>% shapiro_test(RouteAttractivenessShort)
+normality <- rbind(normality.long, normality.medium, normality.short)
+## comment: the distributions are not normally distributed -> we need to use non-parametric tests in step 2 (Mann Whitney U)
+
+
+# 2 Mann Whintey U tests
+## We compare whether adding one of the three message components (congestion info, top down view, team spirit)
+## makes a difference.
+
 supplements_table_S4_students <- get_effect_component_using_Mann_whitney_U(route_attractiveness_informed, subpopulation = "Student & faculty associate")
-## for fans
 supplements_table_S5_fans <- get_effect_component_using_Mann_whitney_U(route_attractiveness_informed, subpopulation = "Fan")
 
-## report significant differences in main manuscript
+## extract significant differences in main manuscript
 table_3_students <- extract_designs_with_sig_difference(supplements_table_S4_students)
 table_4_5_fans <- extract_designs_with_sig_difference(supplements_table_S5_fans)
 
 
-# write results
+# 3 write results
 
 supplements_table_S4_students <- format_table(supplements_table_S4_students)
 supplements_table_S5_fans <- format_table(supplements_table_S5_fans)
