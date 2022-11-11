@@ -16,12 +16,16 @@ read.raw_data <- function(filepath, completed_only = TRUE) {
   }
 
   # extract variables of interest
-  output <- output %>% dplyr::select("group" | "condition" | starts_with("Var", ignore.case = TRUE))
+  output <- output %>% dplyr::select("id", "group" | "condition" | starts_with("Var", ignore.case = TRUE) | "lastpage")
   output <- output %>% dplyr::select(-ends_with("Time", ignore.case = TRUE))
   output <- output %>% dplyr::select(-ends_with("VarRandomCondition", ignore.case = TRUE))
 
   # A0 we remove the message design A0 since it does not include a route recommendation
-  output <- droplevels(output[output$condition != "A0",])
+  output$condition <- str_trim(output$condition)
+  output$condition <- replace_na(output$condition, "NotAssigned")
+  output <- subset(output, condition != "A0")
+
+  output$lastpage <- replace_na(output$lastpage, -1)
 
   output <- data.frame(output)
 

@@ -19,44 +19,44 @@ library(xtable)
 set.seed(1234)
 
 alpha <- 0.05
-source("survey_results/src/read_data.R")
-source("survey_results/src/constants.R")
-source("survey_results/src/derived_quantities.R")
-source("survey_results/src/statTests.R")
-source("survey_results/final_table_export_1.R")
+source("src/read_data.R")
+source("src/constants.R")
 
 
 
+survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx" )
 
-# compare absolute values
-variablesstudents <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = (1:500))
-variablesstudents <- get_4x2_uninformed(variablesstudents)
-variablesstudents$group <- "students"
-
-variablesfans <- get_survey_results("survey_results/data/results-survey4-20220301_abbr.csv", transform_likert = TRUE, subpopulation = -(1:500))
-variablesfans <- get_4x2_uninformed(variablesfans)
-variablesfans$group <- "fans"
-
-variables <- rbind(variablesfans, variablesstudents)
-
-gender <- variables %>% dplyr::count(group, VarGender) %>% pivot_wider(names_from = VarGender, values_from = n)
+# gender distribution
+gender <- survey_results %>% dplyr::count(group, VarGender) %>% pivot_wider(names_from = VarGender, values_from = n)
 cols <- c("Female", "Male", "Prefer not to answer", "See my comment (please provide a comment)" )
 gender$n <- rowSums(gender[,cols], dims = 1, na.rm = TRUE)
 gender[,cols] <- gender[,cols] / gender$n
+print(xtable(gender, type = "latex", digits = 2), floating = FALSE, file = "output/gender.tex", include.rownames = FALSE)
 
-filename <- "survey_results/final_table/gender.tex"
-print(xtable(gender, type = "latex", digits = 2), floating = FALSE, file = filename, include.rownames = FALSE)
-print("finished")
-
-
-age <- variables %>% dplyr::count(group, VarAge) %>% pivot_wider(names_from = VarAge, values_from = n) %>% relocate('>65', .after = last_col())
+# age distribution
+age <- survey_results %>% dplyr::count(group, VarAge) %>% pivot_wider(names_from = VarAge, values_from = n) %>% relocate('>65', .after = last_col())
 cols <- c("<18", "18-25", "26-35", "36-50", "51-65", ">65")
 age$n <- rowSums(age[,cols], dims = 1, na.rm = TRUE)
 age[,cols] <- age[,cols] / age$n
+print(xtable(age, type = "latex", digits = 2), floating = FALSE, file = "output/table_1_age.tex", include.rownames = FALSE)
 
-filename <- "survey_results/final_table/age.tex"
-print(xtable(age, type = "latex", digits = 2), floating = FALSE, file = filename, include.rownames = FALSE)
-print("finished")
+
+# dropouts
+survey_results_all <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", completed_only = FALSE)
+dropoutrate <- nrow(survey_results)/nrow(survey_results_all)
+
+dropped <- subset(survey_results_all, lastpage < 9)
+percentageDroppedBeforePage3 <- nrow(subset(dropped, lastpage < 3))/ nrow(dropped)
+
+dropoutAnalysis <- data_frame( finished = nrow(survey_results),
+                               total = nrow(survey_results_all),
+                               dropoutrate = dropoutrate,
+                               info = "A0 excluded from analysis",
+                               percentageDroppedBeforePage3 = percentageDroppedBeforePage3
+)
+print(xtable(dropoutAnalysis, type = "latex", digits = 4), floating = FALSE, file = "output/dropouts.tex", include.rownames = FALSE)
+
+print("Export finished.")
 
 
 
