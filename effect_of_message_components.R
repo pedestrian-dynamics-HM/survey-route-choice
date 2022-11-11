@@ -145,7 +145,17 @@ normality <- rbind(normality.long, normality.medium, normality.short)
 ## comment: the distributions are not normally distributed -> we need to use non-parametric tests in step 2 (Mann Whitney U)
 
 
-# 2 Statistics +  Kruskal Wallis test
+# 2 Statistics
+
+stat.long <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessLong, type = "full")
+stat.medium <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessMedium, type = "full")
+stat.short <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessShort, type = "full")
+
+stat <- rbind(stat.long, stat.medium, stat.short)
+supplements_table_S1_S2_stats <- stat[with(stat, order(Informed,  group, variable)), ]
+supplements_table_S1_S2_stats <- supplements_table_S1_S2_stats[, c("Informed", "variable", "group", "condition",  "mean", "median", "sd", "n")]
+
+#  3 Kruskal Wallis test
 ## before we compare two message desings we check whether there is a difference or not
 
 kruskal.long <- route_attractiveness %>% group_by(Informed, group) %>% kruskal_test(RouteAttractivenessLong ~ condition)
@@ -156,15 +166,7 @@ kruskal <- rbind(kruskal.long, kruskal.medium, kruskal.short)
 supplements_table_S3_kruskal <- kruskal[with(kruskal, order(Informed, group)), ]
 
 
-stat.long <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessLong, type = "full")
-stat.medium <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessMedium, type = "full")
-stat.short <- route_attractiveness %>% group_by(Informed, group, condition) %>% get_summary_stats(RouteAttractivenessShort, type = "full")
-
-stat <- rbind(stat.long, stat.medium, stat.short)
-supplements_table_S1_S2_stats <- stat[with(stat, order(Informed,  group, variable)), ]
-supplements_table_S1_S2_stats <- supplements_table_S1_S2_stats[, c("Informed", "variable", "group", "condition",  "mean", "median", "sd", "n")]
-
-# 3 Mann Whintey U tests
+# 4 Mann Whintey U tests
 ## We only need to consider the informed case (without info, the message design does not exit, thus, has no effect)
 ## We compare whether adding one of the three message components (congestion info, top down view, team spirit)
 ## makes a difference.
@@ -176,11 +178,28 @@ supplements_table_S5_fans <- get_effect_component_using_Mann_whitney_U(route_att
 table_3_students <- extract_designs_with_sig_difference(supplements_table_S4_students)
 table_4_5_fans <- extract_designs_with_sig_difference(supplements_table_S5_fans)
 
+# 5 assess whether the route attractiveness differs when adding topdownview, teamspirit or top down view & team spirit
 
-# 3 write results
+## check difference for fans only for the following three conditions
+route_attractiveness_subset <- subset(route_attractiveness_informed, group=="Fan")
+c1 <- "Congestion info + arrow + team spirit"
+c2 <- "Congestion info + arrow + top down view"
+c3 <- "Congestion info + arrow + top down view + team spirit"
+
+route_attractiveness_subset <- route_attractiveness_subset %>% filter(condition == c1 | condition == c2 | condition == c3 )
+fans_long_route_no_diff_when_adding_together <- route_attractiveness_subset %>% kruskal_test(RouteAttractivenessLong ~ condition)
+
+
+# 6 write results
 
 supplements_table_S4_students <- format_table(supplements_table_S4_students)
 supplements_table_S5_fans <- format_table(supplements_table_S5_fans)
+
+print(xtable(fans_long_route_no_diff_when_adding_together,
+             type = "latex",
+             digits = PVALPRECISION), floating = FALSE,
+      file = "output/fans_long_route_no_diff_when_adding_together.tex",
+      include.rownames = FALSE)
 
 print(xtable(supplements_table_S1_S2_stats,
              type = "latex",
