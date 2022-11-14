@@ -49,6 +49,14 @@ stats <- stats %>% group_by(group) %>% get_summary_stats(type = "full")
 results.stats <- stats[, c( "group", "variable",  "mean", "median", "sd", "n")]
 
 
+kruskal.long <- route_attractiveness_priorToInfo %>% group_by(group) %>% kruskal_test(RouteAttractivenessLong ~ condition)
+kruskal.medium <- route_attractiveness_priorToInfo %>% group_by(group) %>% kruskal_test(RouteAttractivenessMedium ~ condition)
+kruskal.short <- route_attractiveness_priorToInfo %>% group_by(group) %>% kruskal_test(RouteAttractivenessShort ~ condition)
+
+kruskal <- rbind(kruskal.long, kruskal.medium, kruskal.short)
+kruskal <- kruskal[order(kruskal$group), ]
+
+
 # 3 investigate route preferences
 # we lump the conditions group-wise, because there is no difference (see results of step 2)
 
@@ -72,5 +80,6 @@ results.dunntest <- rbind(results.dunntest.fans, results.dunntest.students)
 DIGITS <- 4
 print(xtable(results.stats, type = "latex", digits=DIGITS), floating = FALSE, file = "output/RoutePreferencePriorToInfoStats.tex", include.rownames=FALSE)
 print(xtable(results.dunntest, type = "latex", digits=DIGITS), floating = FALSE, file = "output/RoutePreferencePriorToInfoDunntest.tex", include.rownames=FALSE)
+print(xtable(kruskal, type = "latex", digits=DIGITS), floating = FALSE, file = "output/supplements_table_S3_kruskal_part2.tex", include.rownames=FALSE)
 
 print("Export finished.")

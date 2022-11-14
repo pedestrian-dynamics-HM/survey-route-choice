@@ -80,10 +80,10 @@ for (group_ in unique(route_attractiveness$group)) {
       df_ <- data.frame(Group = c(group_),
                         Route = c(route_),
                         Condition = c(cond_),
-                        pValue = c(round(val, PVALPRECISION)),
-                        W = round(W, 1),
                         meanValUnInformed = m1$meanUninformed,
-                        meanValInformed = m1$meanInformed
+                        meanValInformed = m1$meanInformed,
+                        pValue = c(round(val, PVALPRECISION)),
+                        W = round(W, 1)
       )
       df <- rbind(df, df_)
 

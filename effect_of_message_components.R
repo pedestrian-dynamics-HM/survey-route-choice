@@ -15,8 +15,8 @@ library(readxl)
 
 set.seed(1234)
 alpha <- 0.05
-PVALPRECISION <- 3
-MEANPREC <- 2
+PVALPRECISION <- 4
+MEANPREC <- 3
 
 source("src/read_data.R")
 source("src/constants.R")
