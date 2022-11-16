@@ -80,6 +80,5 @@ results.dunntest <- rbind(results.dunntest.fans, results.dunntest.students)
 DIGITS <- 4
 print(xtable(results.stats, type = "latex", digits=DIGITS), floating = FALSE, file = "output/RoutePreferencePriorToInfoStats.tex", include.rownames=FALSE)
 print(xtable(results.dunntest, type = "latex", digits=DIGITS), floating = FALSE, file = "output/RoutePreferencePriorToInfoDunntest.tex", include.rownames=FALSE)
-print(xtable(kruskal, type = "latex", digits=DIGITS), floating = FALSE, file = "output/supplements_table_S3_kruskal_part2.tex", include.rownames=FALSE)
 
 print("Export finished.")
