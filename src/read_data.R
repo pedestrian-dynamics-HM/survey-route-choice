@@ -5,6 +5,40 @@ library(ltm)
 library(reshape2)
 
 
+get_likert_scaled_variable_names <- function() {
+  names_ <- c("VarManipulationcheck.ImagineSituation.",
+              "VarSocialNorms.SupportTeam.",
+              "VarSocialNorms.CareFriends.",
+              "VarSocialNorms.SupportFans.",
+              "VarSocialNorms.TravelSafely.",
+              "VarSocialNorms.WalkTogether.",
+              "VarConditionB0Reason.UndestandEnv.",
+              "VarConditionB0Reason.UnderstandRoutes.",
+              "VarConditionB0Reason.PreferShortRoutes.",
+              "VarConditionInfoReas.AmountInfo.",
+              "VarConditionInfoReas.AmountInfoCounter.",
+              "VarConditionInfoReas.Efficiency.",
+              "VarConditionInfoReas.Comprehensivenss.",
+              "VarConditionInfoReas.CondCompliance.",
+              "VarConditionInfoReas.Marker.",
+              "VarConditionInfoReas.Density.",
+              "VarConditionInfoReas.Photographs.",
+              "VarFaith.Reliability.",
+              "VarFaith.Fairness.",
+              "VarFaith.Motivation.",
+              "VarFaith.Faith1.",
+              "VarFaith.Faith2.",
+              "VarFaith.SharedIdentity.",
+              "VarConditionB0.NoInfoRouteA.",
+              "VarConditionB0.NoInfoRouteB.",
+              "VarConditionB0.NoInfoRouteC.",
+              "VarConditionInfo.InformedRouteA.",
+              "VarConditionInfo.InformedRouteB.",
+              "VarConditionInfo.InformedRouteC.")
+  return(names_)
+}
+
+
 read.raw_data <- function(filepath, completed_only = TRUE) {
   # read excel file
   library(readxl)
@@ -13,6 +47,7 @@ read.raw_data <- function(filepath, completed_only = TRUE) {
   # remove incomplete survey results
   if (completed_only) {
     output <- subset(output, submitdate == "1980-01-01 00:00:00") # finished samples have this timestamp
+    print(paste("Extract complete survey runs from", filepath))
   }
 
   # extract variables of interest
@@ -101,7 +136,7 @@ get_route_attractiveness_long_format <- function(data) {
                  "InformationProvided_RouteAttractivenessShort"
   )
 
-  data <- data %>% dplyr::select( c("group", "condition", col_names) )
+  data <- data %>% dplyr::select( c("group", "condition", all_of(col_names)) )
 
   data <- reshape(data,
                   direction = 'long',

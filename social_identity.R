@@ -1,7 +1,3 @@
-# Title     : Shared social identity and motivation
-# Created by: Christina Mayr
-# Created on: 29th June, 2022
-
 library(ggplot2)
 library(Hmisc)
 library(hrbrthemes)
@@ -13,15 +9,15 @@ library(writexl)
 library(xtable)
 library(crank)
 
-set.seed(1234)
-
 source("src/read_data.R")
 source("src/constants.R")
-source("src/derived_quantities.R")
+
+print(" ---- Script started - Analyze level of social identification ----")
 
 
 # extract variables from data
-variables <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
+path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+variables <- get_survey_results(path_to_survey_file, transform_likert = TRUE)
 
 # 1 normality
 ## check for each condition whether data is normality distributed or not
@@ -35,8 +31,7 @@ normal_test.4 <- variables %>% group_by(group, condition) %>% shapiro_test(VarFa
 normal_test <- rbind(normal_test.1, normal_test.2, normal_test.3, normal_test.4)
 normal_test <- normal_test %>% dplyr::select(-c("statistic"))
 normal_test <- normal_test %>% pivot_wider(names_from = c("variable") , values_from = c("p"))
-normal_test <- round_df(normal_test)
-print(normal_test)
+
 
 # 2 make sure that in between conditions behavior is equal
 ## is difference between conditions?
@@ -58,8 +53,7 @@ kruskal_wallis_test <- data.frame(group = c("students", "fans"),
                                   supportTeam = c(res.students.team$p, res.fans.team$p),
                                   motivation = c(res.students.motivation$p, res.fans.motivation$p),
                                   sharedId = c(res.students.sharedid$p, res.fans.sharedid$p))
-kruskal_wallis_test <- round_df(kruskal_wallis_test)
-print(kruskal_wallis_test)
+
 
 
 # 3 compare social identity related variables between students and football fans
@@ -70,7 +64,8 @@ var_stats <- variables %>% group_by(group) %>% get_summary_stats(type = "full")
 var_stats <- var_stats %>% dplyr::select(c("group", "variable", "mean", "sd"))
 var_stats <- var_stats %>% pivot_wider(names_from = c("group") , values_from = c("mean", "sd"))
 
-var_stats$p <- -1
+var_stats$p <- -1 # initalize
+var_stats$W <- -1 # initalize
 res.sf <- wilcox.test(VarSocialNorms.SupportFans. ~ group, data = variables, na.rm = TRUE, paired = FALSE, exact = FALSE, conf.int = TRUE)
 res.st<- wilcox.test(VarSocialNorms.SupportTeam. ~ group, data = variables, na.rm = TRUE, paired = FALSE, exact = FALSE, conf.int = TRUE)
 res.id <- wilcox.test(VarFaith.SharedIdentity. ~ group, data = variables, na.rm = TRUE, paired = FALSE, exact = FALSE, conf.int = TRUE)
@@ -83,14 +78,16 @@ var_stats$W[var_stats$variable == "VarSocialNorms.SupportFans."] <- res.sf$stati
 var_stats$W[var_stats$variable == "VarSocialNorms.SupportTeam."] <- res.st$statistic[[1]]
 var_stats$W[var_stats$variable == "VarFaith.SharedIdentity."] <- res.id$statistic[[1]]
 
-var_stats <- round_df(var_stats)
-print(var_stats)
-
-
 # 4 Write data
-## social identity
-DIGITS <- 4
-print(xtable(var_stats, type = "latex", digits=DIGITS), floating = FALSE, file = "output/SocialIdentityVarsDifferenceFansStudents.tex", include.rownames=FALSE)
-print(xtable(kruskal_wallis_test, type = "latex", digits=DIGITS), floating = FALSE, file = "output/SocialIdentityVarsKruskalWallisConditions.tex", include.rownames=FALSE)
+print("Start export ...")
+filename1 <- file.path(getwd(), "output", "SocialIdentityVarsDifferenceFansStudents.tex")
+print(xtable(var_stats, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename1, include.rownames=FALSE)
+print(filename1)
 
-print("Export finished.")
+filename2 <- file.path(getwd(), "output", "SocialIdentityVarsKruskalWallisConditions.tex")
+print(xtable(kruskal_wallis_test, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename2, include.rownames=FALSE)
+print(filename2)
+
+print("... export finished.")
+
+print(" -------------------- Script finished -------------------------")

@@ -13,10 +13,8 @@ library(dplyr)
 library(wordspace)
 library(xtable)
 
-set.seed(1234)
 source("src/read_data.R")
 source("src/constants.R")
-source("src/derived_quantities.R")
 
 
 traffic_assignment_model <- function(output, ...){
@@ -40,22 +38,29 @@ traffic_assignment_model <- function(output, ...){
   return(df_)
 }
 
-# read data
-survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
+print(" ----- Script started - Compute route choice distributions ----")
+
+# 1 read data
+path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+survey_results <- get_survey_results(path_to_survey_file) # excluding incomplete samples
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 
-# prior to information the message design has no effect (see Kruskal Wallis test results)
+# 2 prior to information the message design has no effect (see Kruskal Wallis test results)
 ## we lump the conditions
 route_attractiveness$condition[route_attractiveness$Informed == "PriorToInformation"] <- "PriorToInformation"
 
-#  use traffic assignment model to compute route choice distributions
+# 3 use traffic assignment model to compute route choice distributions
 table_6_RouteChoiceProportions <- route_attractiveness %>% group_by(group, condition) %>% traffic_assignment_model()
 
-print(xtable(table_6_RouteChoiceProportions, type = "latex", digits = 2),
+# 4 export route choice distributions
+print("Start export ...")
+
+filename <- file.path(getwd(), "output", "table_6_RouteChoiceProportions.tex")
+print(xtable(table_6_RouteChoiceProportions, type = "latex", digits = PRECISION_PERCENTAGE),
 floating = FALSE,
-file = "output/table_6_RouteChoiceProportions.tex",
+file = filename,
 include.rownames = FALSE)
+print(filename)
+print("... export finished.")
 
-
-
-
+print(" -------------------- Script finished -------------------------")

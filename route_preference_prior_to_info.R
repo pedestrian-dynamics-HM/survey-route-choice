@@ -1,4 +1,3 @@
-
 library(Hmisc)
 library(hrbrthemes)
 library(viridis)
@@ -9,15 +8,14 @@ library(writexl)
 library(xtable)
 library(crank)
 
-set.seed(1234)
-
 source("src/read_data.R")
 source("src/constants.R")
-source("src/derived_quantities.R")
 
+print(" -- Script started - Investigate route preference prior to information --")
 
 # extract variables from data
-survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
+path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+survey_results <- get_survey_results(path_to_survey_file, transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 route_attractiveness_priorToInfo <- subset(route_attractiveness, Informed == "PriorToInformation")
 
@@ -48,7 +46,6 @@ stats <- route_attractiveness_priorToInfo %>% dplyr::select(c("group", "conditio
 stats <- stats %>% group_by(group) %>% get_summary_stats(type = "full")
 results.stats <- stats[, c( "group", "variable",  "mean", "median", "sd", "n")]
 
-
 kruskal.long <- route_attractiveness_priorToInfo %>% group_by(group) %>% kruskal_test(RouteAttractivenessLong ~ condition)
 kruskal.medium <- route_attractiveness_priorToInfo %>% group_by(group) %>% kruskal_test(RouteAttractivenessMedium ~ condition)
 kruskal.short <- route_attractiveness_priorToInfo %>% group_by(group) %>% kruskal_test(RouteAttractivenessShort ~ condition)
@@ -60,25 +57,33 @@ kruskal <- kruskal[order(kruskal$group), ]
 # 3 investigate route preferences
 # we lump the conditions group-wise, because there is no difference (see results of step 2)
 
-route_attractiveness_L <- pivot_longer(route_attractiveness_priorToInfo, -c(Informed, group, condition, id, conditionANDGroup), values_to = "RouteAttractivenessX", names_to = "Route")
+route_attractiveness_L <- pivot_longer(route_attractiveness_priorToInfo,
+                                       -c(Informed, group, condition, id, conditionANDGroup),
+                                       values_to = "RouteAttractiveness",
+                                       names_to = "Route")
 
 results.kruskal <- route_attractiveness_L %>% group_by(group) %>% kruskal_test(RouteAttractiveness ~ Route)
 
 ## unfortunately group_by does not work here
 students <- subset(route_attractiveness_L, group == "Student & faculty associate")
-results.dunntest.students <- print(FSA::dunnTest(students$RouteAttractiveness ~ Route, data=students))
+results.dunntest.students <- invisible(capture.output(print(FSA::dunnTest(students$RouteAttractiveness ~ Route, data=students))))
 results.dunntest.students <- cbind(Group = "Student & faculty associate", results.dunntest.students )
 
 fans <- subset(route_attractiveness_L, group == "Fan")
-results.dunntest.fans <- print(FSA::dunnTest(fans$RouteAttractiveness ~ Route, data=fans))
+results.dunntest.fans <- invisible(capture.output(print(FSA::dunnTest(fans$RouteAttractiveness ~ Route, data=fans))))
 results.dunntest.fans <- cbind(Group = "Fan", results.dunntest.fans)
 
 results.dunntest <- rbind(results.dunntest.fans, results.dunntest.students)
 
 # 4 Write data
-## social identity
-DIGITS <- 4
-print(xtable(results.stats, type = "latex", digits=DIGITS), floating = FALSE, file = "output/RoutePreferencePriorToInfoStats.tex", include.rownames=FALSE)
-print(xtable(results.dunntest, type = "latex", digits=DIGITS), floating = FALSE, file = "output/RoutePreferencePriorToInfoDunntest.tex", include.rownames=FALSE)
+print("Start export ...")
+filename1 <- file.path(getwd(), "output", "RoutePreferencePriorToInfoStats.tex")
+print(xtable(results.stats, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename1, include.rownames=FALSE)
+print(filename1)
 
-print("Export finished.")
+filename2 <- file.path(getwd(), "output", "RoutePreferencePriorToInfoDunntest.tex")
+print(xtable(results.dunntest, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename2, include.rownames=FALSE)
+print(filename2)
+print("... export finished.")
+
+print(" -------------------- Script finished -------------------------")

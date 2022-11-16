@@ -13,15 +13,8 @@ library(writexl)
 library(xtable)
 library(readxl)
 
-set.seed(1234)
-alpha <- 0.05
-PVALPRECISION <- 4
-MEANPREC <- 3
-
 source("src/read_data.R")
 source("src/constants.R")
-source("src/derived_quantities.R")
-source("src/statTests.R")
 
 mannWhitneyUTest <- function(variables, cond1, cond2, route) {
 
@@ -37,8 +30,8 @@ mannWhitneyUTest <- function(variables, cond1, cond2, route) {
   # https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test
   mann_whit_results <- wilcox.test(eval(as.symbol(route)) ~ condition, data = variables_, na.rm = TRUE, paired = FALSE, exact = FALSE, conf.int = TRUE)
 
-  mann_whit_results$mean1 <- round(mean(output1[, c(route)]), MEANPREC)
-  mann_whit_results$mean2 <- round(mean(output2[, c(route)]), MEANPREC)
+  mann_whit_results$mean1 <- round(mean(output1[, c(route)]), PRECISION_VAR)
+  mann_whit_results$mean2 <- round(mean(output2[, c(route)]), PRECISION_VAR)
 
   return(mann_whit_results)
 }
@@ -58,9 +51,9 @@ is_different_mann_whitney_u <- function(variables, conditionPairs, route, differ
                       Difference = c(difference),
                       Condition1 = c(condition1),
                       Condition2 = c(condition2),
-                      pValue = c(round(val, PVALPRECISION)),
-                      W = round(W, 1),
-                      isDifferent = c(val <= alpha),
+                      pValue = c(round(val, PRECISION_PVAL)),
+                      W = round(W, PRECISION_TEST_STAT),
+                      isDifferent = c(val <= ALPHA),
                       meanValCondition1 = m1$mean1,
                       meanValCondition2 = m1$mean2
     )
@@ -112,7 +105,7 @@ get_effect_component_using_Mann_whitney_U <- function(route_attractiveness, subp
 extract_designs_with_sig_difference <- function(all_designs) {
 
   data <- subset(all_designs, isDifferent == TRUE)
-  data$pW <- paste("p = ", round(data$pValue, PVALPRECISION), ", W = ", data$W)
+  data$pW <- paste("p = ", round(data$pValue, PRECISION_PVAL), ", W = ", data$W)
   data <- data[c("Difference", "Route", "Condition1", "Condition2", "pW")]
   data <- data %>% pivot_wider(names_from = Route, values_from = pW)
   data <- data[order(data$Difference),]
@@ -129,9 +122,12 @@ format_table <- function(table) {
   return(table)
 }
 
+print(" ---- Script started - Investigate effect of message components ----")
+
 
 # read data
-survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
+path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+survey_results <- get_survey_results(path_to_survey_file, transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 route_attractiveness_informed <- subset(route_attractiveness, Informed == "InformationProvided")
 route_attractiveness_priorToInfo <- subset(route_attractiveness, Informed == "PriorToInformation")
@@ -195,50 +191,66 @@ fans_long_route_no_diff_when_adding_together <- route_attractiveness_subset %>% 
 supplements_table_S4_students <- format_table(supplements_table_S4_students)
 supplements_table_S5_fans <- format_table(supplements_table_S5_fans)
 
+print("Start export ...")
+filename <- file.path(getwd(), "output", "fans_long_route_no_diff_when_adding_together.tex")
 print(xtable(fans_long_route_no_diff_when_adding_together,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/fans_long_route_no_diff_when_adding_together.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+filename <- file.path(getwd(), "output", "supplements_table_S1_S2_stats.tex")
 print(xtable(supplements_table_S1_S2_stats,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/supplements_table_S1_S2_stats.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+filename <- file.path(getwd(), "output", "supplements_table_S3_kruskal.tex")
 print(xtable(supplements_table_S3_kruskal,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/supplements_table_S3_kruskal.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+filename <- file.path(getwd(), "output", "supplements_table_S4_students.tex")
 print(xtable(supplements_table_S4_students,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/supplements_table_S4_students.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+filename <- file.path(getwd(), "output", "supplements_table_S5_fans.tex")
 print(xtable(supplements_table_S5_fans,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/supplements_table_S5_fans.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+filename <- file.path(getwd(), "output", "table_3_students.tex")
 print(xtable(table_3_students,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/table_3_students.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+filename <- file.path(getwd(), "output", "table_4_5_fans.tex")
 print(xtable(table_4_5_fans,
              type = "latex",
-             digits = PVALPRECISION), floating = FALSE,
-      file = "output/table_4_5_fans.tex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
       include.rownames = FALSE)
+print(filename)
 
+print("... export finished.")
 
-print("Finished data export.")
+print(" -------------------- Script finished -------------------------")
 
 
 
