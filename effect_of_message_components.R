@@ -126,7 +126,7 @@ print(" ---- Script started - Investigate effect of message components ----")
 
 
 # read data
-path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+path_to_survey_file <-  file.path(getwd(), "data", "Table S1.xlsx") # see sub-dir data
 survey_results <- get_survey_results(path_to_survey_file, transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 route_attractiveness_informed <- subset(route_attractiveness, Informed == "InformationProvided")
@@ -192,47 +192,11 @@ supplements_table_S4_students <- format_table(supplements_table_S4_students)
 supplements_table_S5_fans <- format_table(supplements_table_S5_fans)
 
 print("Start export ...")
-filename <- file.path(getwd(), "output", "fans_long_route_no_diff_when_adding_together.tex")
-print(xtable(fans_long_route_no_diff_when_adding_together,
-             type = "latex",
-             digits = PRECISION_PVAL), floating = FALSE,
-      file = filename,
-      include.rownames = FALSE)
-print(filename)
 
-filename <- file.path(getwd(), "output", "supplements_table_S1_S2_stats.tex")
-print(xtable(supplements_table_S1_S2_stats,
-             type = "latex",
-             digits = PRECISION_PVAL), floating = FALSE,
-      file = filename,
-      include.rownames = FALSE)
-print(filename)
 
-filename <- file.path(getwd(), "output", "supplements_table_S3_kruskal.tex")
-print(xtable(supplements_table_S3_kruskal,
-             type = "latex",
-             digits = PRECISION_PVAL), floating = FALSE,
-      file = filename,
-      include.rownames = FALSE)
-print(filename)
+## manuscript data
 
-filename <- file.path(getwd(), "output", "supplements_table_S4_students.tex")
-print(xtable(supplements_table_S4_students,
-             type = "latex",
-             digits = PRECISION_PVAL), floating = FALSE,
-      file = filename,
-      include.rownames = FALSE)
-print(filename)
-
-filename <- file.path(getwd(), "output", "supplements_table_S5_fans.tex")
-print(xtable(supplements_table_S5_fans,
-             type = "latex",
-             digits = PRECISION_PVAL), floating = FALSE,
-      file = filename,
-      include.rownames = FALSE)
-print(filename)
-
-filename <- file.path(getwd(), "output", "table_3_students.tex")
+filename <- file.path(getwd(), "output", "manuscript_table_3.tex")
 print(xtable(table_3_students,
              type = "latex",
              digits = PRECISION_PVAL), floating = FALSE,
@@ -240,8 +204,50 @@ print(xtable(table_3_students,
       include.rownames = FALSE)
 print(filename)
 
-filename <- file.path(getwd(), "output", "table_4_5_fans.tex")
+filename <- file.path(getwd(), "output", "manuscript_table_4_5.tex")
 print(xtable(table_4_5_fans,
+             type = "latex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
+      include.rownames = FALSE)
+print(filename)
+
+filename <- file.path(getwd(), "output", "manuscript_adding_comp_together_no_effect_fans.tex")
+print(xtable(fans_long_route_no_diff_when_adding_together,
+             type = "latex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
+      include.rownames = FALSE)
+print(filename)
+
+## data stored in supplements
+
+filename <- file.path(getwd(), "output", "supplements_table_S2.tex")
+print(xtable(supplements_table_S4_students,
+             type = "latex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
+      include.rownames = FALSE)
+print(filename)
+
+filename <- file.path(getwd(), "output", "supplements_table_S3.tex")
+print(xtable(supplements_table_S5_fans,
+             type = "latex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
+      include.rownames = FALSE)
+print(filename)
+
+filename <- file.path(getwd(), "output", "supplements_table_S9.tex")
+print(xtable(supplements_table_S1_S2_stats,
+             type = "latex",
+             digits = PRECISION_PVAL), floating = FALSE,
+      file = filename,
+      include.rownames = FALSE)
+print(filename)
+
+filename <- file.path(getwd(), "output", "supplements_table_S8.tex")
+print(xtable(supplements_table_S3_kruskal,
              type = "latex",
              digits = PRECISION_PVAL), floating = FALSE,
       file = filename,

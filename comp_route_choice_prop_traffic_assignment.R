@@ -41,7 +41,7 @@ traffic_assignment_model <- function(output, ...){
 print(" ----- Script started - Compute route choice distributions ----")
 
 # 1 read data
-path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+path_to_survey_file <-  file.path(getwd(), "data", "Table S1.xlsx") # see sub-dir data
 survey_results <- get_survey_results(path_to_survey_file) # excluding incomplete samples
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 
@@ -55,7 +55,7 @@ table_6_RouteChoiceProportions <- route_attractiveness %>% group_by(group, condi
 # 4 export route choice distributions
 print("Start export ...")
 
-filename <- file.path(getwd(), "output", "table_6_RouteChoiceProportions.tex")
+filename <- file.path(getwd(), "output", "manuscript_table_6.tex")
 print(xtable(table_6_RouteChoiceProportions, type = "latex", digits = PRECISION_PERCENTAGE),
 floating = FALSE,
 file = filename,

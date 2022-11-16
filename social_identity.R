@@ -80,13 +80,10 @@ var_stats$W[var_stats$variable == "VarFaith.SharedIdentity."] <- res.id$statisti
 
 # 4 Write data
 print("Start export ...")
-filename1 <- file.path(getwd(), "output", "SocialIdentityVarsDifferenceFansStudents.tex")
-print(xtable(var_stats, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename1, include.rownames=FALSE)
-print(filename1)
+filename <- file.path(getwd(), "output", "manuscript__social_identity_salient_fans.tex")
+print(xtable(var_stats, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename, include.rownames=FALSE)
+print(filename)
 
-filename2 <- file.path(getwd(), "output", "SocialIdentityVarsKruskalWallisConditions.tex")
-print(xtable(kruskal_wallis_test, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename2, include.rownames=FALSE)
-print(filename2)
 
 print("... export finished.")
 

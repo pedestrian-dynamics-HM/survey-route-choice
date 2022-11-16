@@ -37,7 +37,7 @@ mannWhitneyUTest <- function(variables, condition, group, route) {
 print(" -- Script started - Compute route choice prior to information vs. info provided --")
 
 # 1 read data
-path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+path_to_survey_file <-  file.path(getwd(), "data", "Table S1.xlsx") # see sub-dir data
 survey_results <- get_survey_results(path_to_survey_file, transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 
@@ -105,7 +105,7 @@ statistics.informed <- subset(statistics, Informed == "InformationProvided")
 print("Start export ...")
 
 # table
-filenametable <- file.path(getwd(), "output", "effect_of_information_on_route_attractiveness.tex")
+filenametable <- file.path(getwd(), "output", "supplements_table_S4_S5.tex")
 print(xtable(df,
              type = "latex",
              digits = PRECISION_PVAL), floating = FALSE,
@@ -115,7 +115,7 @@ print(xtable(df,
 print(filenametable)
 
 # figure
-filenamefigure1 <- file.path(getwd(), "output", "RouteLikelihoodsUnInformed.pdf")
+filenamefigure1 <- file.path(getwd(), "output", "manuscript_Figure_4-part1.pdf")
 ggplot2::ggplot(statistics.uninformed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
   geom_point() +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.5)) +
@@ -129,7 +129,7 @@ ggsave(filenamefigure1, width = 25, height = 16, units = "cm")
 print(filenamefigure1)
 
 # figure
-filenamefigure2 <- file.path(getwd(), "output", "RouteLikelihoodsInformed.pdf")
+filenamefigure2 <- file.path(getwd(), "output", "manuscript_Figure_4-part2.pdf")
 ggplot2::ggplot(statistics.informed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
   geom_point() +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.5)) +

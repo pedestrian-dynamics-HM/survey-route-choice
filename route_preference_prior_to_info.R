@@ -14,7 +14,7 @@ source("src/constants.R")
 print(" -- Script started - Investigate route preference prior to information --")
 
 # extract variables from data
-path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+path_to_survey_file <-  file.path(getwd(), "data", "Table S1.xlsx") # see sub-dir data
 survey_results <- get_survey_results(path_to_survey_file, transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 route_attractiveness_priorToInfo <- subset(route_attractiveness, Informed == "PriorToInformation")
@@ -77,11 +77,11 @@ results.dunntest <- rbind(results.dunntest.fans, results.dunntest.students)
 
 # 4 Write data
 print("Start export ...")
-filename1 <- file.path(getwd(), "output", "RoutePreferencePriorToInfoStats.tex")
+filename1 <- file.path(getwd(), "output", "supplements_table_S6.tex")
 print(xtable(results.stats, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename1, include.rownames=FALSE)
 print(filename1)
 
-filename2 <- file.path(getwd(), "output", "RoutePreferencePriorToInfoDunntest.tex")
+filename2 <- file.path(getwd(), "output", "supplements_table_S7.tex")
 print(xtable(results.dunntest, type = "latex", digits=PRECISION_PVAL), floating = FALSE, file = filename2, include.rownames=FALSE)
 print(filename2)
 print("... export finished.")

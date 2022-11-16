@@ -21,7 +21,7 @@ print(" ---- Script started - Analyze gender, age and dropout rate ----")
 
 # read data
 
-path_to_survey_file <-  file.path(getwd(), "data", "Table-S6-Survey-Raw-data.xlsx") # see sub-dir data
+path_to_survey_file <-  file.path(getwd(), "data", "Table S1.xlsx") # see sub-dir data
 survey_results <- get_survey_results(path_to_survey_file) # excluding incomplete samples
 survey_results_all <- get_survey_results(path_to_survey_file, completed_only = FALSE) # include incomplete samples
 
@@ -39,7 +39,6 @@ age$n <- rowSums(age[,cols], dims = 1, na.rm = TRUE)
 age[,cols] <- age[,cols] / age$n
 
 # dropouts
-survey_results_all <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", completed_only = FALSE)
 dropoutrate <- nrow(survey_results)/nrow(survey_results_all)
 
 dropped <- subset(survey_results_all, lastpage < 9)
@@ -56,17 +55,18 @@ dropoutAnalysis <- data_frame( finished = nrow(survey_results),
 
 print("Start export ...")
 
-filename1 <- file.path(getwd(), "output", "dropouts.tex")
-print(xtable(dropoutAnalysis, type = "latex", digits = PRECISION_PERCENTAGE), floating = FALSE, file = filename1, include.rownames = FALSE)
-print(filename1)
+filename <- file.path(getwd(), "output", "manuscript_table_1.tex")
+print(xtable(age, type = "latex", digits = PRECISION_PVAL), floating = FALSE, file = filename, include.rownames = FALSE)
+print(filename)
 
-filename2 <- file.path(getwd(), "output", "gender.tex")
-print(xtable(gender, type = "latex", digits = PRECISION_PERCENTAGE), floating = FALSE, file = filename2, include.rownames = FALSE)
-print(filename2)
+filename <- file.path(getwd(), "output", "manuscript__dropouts.tex")
+print(xtable(dropoutAnalysis, type = "latex", digits = PRECISION_PVAL), floating = FALSE, file = filename, include.rownames = FALSE)
+print(filename)
 
-filename3 <- file.path(getwd(), "output", "table_1_age.tex")
-print(xtable(age, type = "latex", digits = PRECISION_PERCENTAGE), floating = FALSE, file = filename3, include.rownames = FALSE)
-print(filename3)
+filename <- file.path(getwd(), "output", "manuscript__gender.tex")
+print(xtable(gender, type = "latex", digits = PRECISION_PVAL), floating = FALSE, file = filename, include.rownames = FALSE)
+print(filename)
+
 
 print("... export finished.")
 
