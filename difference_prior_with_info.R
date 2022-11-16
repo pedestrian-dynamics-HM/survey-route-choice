@@ -61,14 +61,14 @@ route_attractiveness %>%
 # none of the attractivenesses follows a normal distribution
 
 # 3 use Mann Whitney U tests to investiage whether information has an effect
-df <- data.frame(Group = c(),
-                 Route = c(),
-                 Condition = c(),
-                 pValue = c(),
-                 W = c(),
-                 isDifferent = c(),
-                 meanValUnInformed = c(),
-                 meanValInformed = c())
+mannWhitneyUResultsInfoHasEffect <- data.frame(Group = c(),
+                                               Route = c(),
+                                               Condition = c(),
+                                               pValue = c(),
+                                               W = c(),
+                                               isDifferent = c(),
+                                               meanValUnInformed = c(),
+                                               meanValInformed = c())
 
 
 for (group_ in unique(route_attractiveness$group)) {
@@ -85,28 +85,28 @@ for (group_ in unique(route_attractiveness$group)) {
                         pValue = c(round(val, PRECISION_PVAL)),
                         W = round(W, PRECISION_TEST_STAT)
       )
-      df <- rbind(df, df_)
+      mannWhitneyUResultsInfoHasEffect <- rbind(mannWhitneyUResultsInfoHasEffect, df_)
     }
   }
 }
 
 # 3 compute statistics for visual comparison
 
-statistics <- subset(route_attractiveness, select = -c(id))  %>% group_by(Informed, group, condition) %>% get_summary_stats(type = "full")
-statistics$variable <- plyr::mapvalues(statistics$variable,
-                         from = c("RouteAttractivenessLong", "RouteAttractivenessMedium", "RouteAttractivenessShort"),
-                         to = c("Long", "Medium", "Short"))
+statisticsRouteAttractiveness <- subset(route_attractiveness, select = -c(id))  %>% group_by(Informed, group, condition) %>% get_summary_stats(type = "full")
+statisticsRouteAttractiveness$variable <- plyr::mapvalues(statisticsRouteAttractiveness$variable,
+                                                          from = c("RouteAttractivenessLong", "RouteAttractivenessMedium", "RouteAttractivenessShort"),
+                                                          to = c("Long", "Medium", "Short"))
 
-statistics <- statistics %>% dplyr::rename( "Route" = "variable", "Condition" = "condition", "Group" = "group")
-statistics.uninformed <- subset(statistics, Informed == "PriorToInformation")
-statistics.informed <- subset(statistics, Informed == "InformationProvided")
+statisticsRouteAttractiveness <- statisticsRouteAttractiveness %>% dplyr::rename("Route" = "variable", "Condition" = "condition", "Group" = "group")
+RouteAttractivenessStats.uninformed <- subset(statisticsRouteAttractiveness, Informed == "PriorToInformation")
+RouteAttractivenessStats.informed <- subset(statisticsRouteAttractiveness, Informed == "InformationProvided")
 
 # 4 export results
 print("Start export ...")
 
 # table
 filenametable <- file.path(getwd(), "output", "supplements_table_S4_S5.tex")
-print(xtable(df,
+print(xtable(mannWhitneyUResultsInfoHasEffect,
              type = "latex",
              digits = PRECISION_PVAL), floating = FALSE,
       file = filenametable,
@@ -116,7 +116,7 @@ print(filenametable)
 
 # figure
 filenamefigure1 <- file.path(getwd(), "output", "manuscript_Figure_4-part1.pdf")
-ggplot2::ggplot(statistics.uninformed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
+ggplot2::ggplot(RouteAttractivenessStats.uninformed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
   geom_point() +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.5)) +
   theme_light() +
@@ -130,7 +130,7 @@ print(filenamefigure1)
 
 # figure
 filenamefigure2 <- file.path(getwd(), "output", "manuscript_Figure_4-part2.pdf")
-ggplot2::ggplot(statistics.informed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
+ggplot2::ggplot(RouteAttractivenessStats.informed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
   geom_point() +
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.5)) +
   theme_light() +

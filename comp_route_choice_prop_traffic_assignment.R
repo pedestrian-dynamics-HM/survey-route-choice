@@ -50,13 +50,13 @@ route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 route_attractiveness$condition[route_attractiveness$Informed == "PriorToInformation"] <- "PriorToInformation"
 
 # 3 use traffic assignment model to compute route choice distributions
-table_6_RouteChoiceProportions <- route_attractiveness %>% group_by(group, condition) %>% traffic_assignment_model()
+routeChoiceProportions <- route_attractiveness %>% group_by(group, condition) %>% traffic_assignment_model()
 
 # 4 export route choice distributions
 print("Start export ...")
 
 filename <- file.path(getwd(), "output", "manuscript_table_6.tex")
-print(xtable(table_6_RouteChoiceProportions, type = "latex", digits = PRECISION_PERCENTAGE),
+print(xtable(routeChoiceProportions, type = "latex", digits = PRECISION_PERCENTAGE),
 floating = FALSE,
 file = filename,
 include.rownames = FALSE)
