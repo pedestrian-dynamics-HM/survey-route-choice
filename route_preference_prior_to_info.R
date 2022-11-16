@@ -60,7 +60,7 @@ kruskal <- kruskal[order(kruskal$group), ]
 # 3 investigate route preferences
 # we lump the conditions group-wise, because there is no difference (see results of step 2)
 
-route_attractiveness_L <- pivot_longer(route_attractiveness_priorToInfo, -c(Informed, group, condition, id, conditionANDGroup), values_to = "RouteAttractiveness", names_to = "Route")
+route_attractiveness_L <- pivot_longer(route_attractiveness_priorToInfo, -c(Informed, group, condition, id, conditionANDGroup), values_to = "RouteAttractivenessX", names_to = "Route")
 
 results.kruskal <- route_attractiveness_L %>% group_by(group) %>% kruskal_test(RouteAttractiveness ~ Route)
 

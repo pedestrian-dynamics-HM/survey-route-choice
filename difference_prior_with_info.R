@@ -45,6 +45,14 @@ mannWhitneyUTest <- function(variables, condition, group, route) {
 survey_results <- get_survey_results("data/Table-S6-Survey-Raw-data.xlsx", transform_likert = TRUE)
 route_attractiveness <- get_route_attractiveness_long_format(survey_results)
 
+route_attractiveness_L <- pivot_longer(route_attractiveness,
+                                       -c(Informed, group, condition, id),
+                                       values_to = "Attractiveness",
+                                       names_to = "Route",
+                                       names_prefix = "RouteAttractiveness")
+
+
+
 
 # 1 normality check
 route_attractiveness %>%
@@ -58,7 +66,40 @@ route_attractiveness %>%
   shapiro_test(RouteAttractivenessShort)
 # none of the attractivenesses follows a normal distribution
 
+# 1 plot route attractivenesses
 
+statistics <- subset(route_attractiveness, select = -c(id))  %>% group_by(Informed, group, condition) %>% get_summary_stats(type = "full")
+statistics$variable <- plyr::mapvalues(statistics$variable,
+                         from = c("RouteAttractivenessLong", "RouteAttractivenessMedium", "RouteAttractivenessShort"),
+                         to = c("Long", "Medium", "Short"))
+
+statistics <- statistics %>% dplyr::rename( "Route" = "variable", "Condition" = "condition", "Group" = "group")
+statistics.uninformed <- subset(statistics, Informed == "PriorToInformation")
+statistics.informed <- subset(statistics, Informed == "InformationProvided")
+
+ggplot2::ggplot(statistics.uninformed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.5)) +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), strip.text = element_text(color = "black")) +
+  facet_wrap(~Route, nrow = 1) +
+  xlab("") +
+  ylab("Route attractiveness \n (5-Point Likert scale)")
+
+ggsave("output/RouteLikelihoodsUnInformed.pdf", width = 25, height = 16, units = "cm")
+
+ggplot2::ggplot(statistics.informed, aes(x = Condition, y = mean, shape = Group, color = Group)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2, position=position_dodge(.5)) +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), strip.text = element_text(color = "black")) +
+  facet_wrap(~Route, nrow = 1) +
+  xlab("") +
+  ylab("Route attractiveness \n (5-Point Likert scale)")
+
+ggsave("output/RouteLikelihoodsInformed.pdf", width = 25, height = 16, units = "cm")
+
+# 2 use Mann Whitney U tests to investiage whether information has an effect
 df <- data.frame(Group = c(),
                  Route = c(),
                  Condition = c(),
@@ -97,6 +138,9 @@ print(xtable(df,
              digits = PVALPRECISION), floating = FALSE,
       file = "output/effect_of_information_on_route_attractiveness.tex",
       include.rownames = FALSE)
+
+
+
 
 
 print("Export finished.")
