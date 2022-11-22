@@ -42,7 +42,7 @@ get_likert_scaled_variable_names <- function() {
 read.raw_data <- function(filepath, completed_only = TRUE) {
   # read excel file
   library(readxl)
-  output <- readxl::read_excel(filepath)
+  output <- readxl::read_excel(filepath, skip = 2) # row 1: question, row 2: answer options
 
   # remove incomplete survey results
   if (completed_only) {
